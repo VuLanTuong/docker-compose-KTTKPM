@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${post.getTitle()}"></title>
+    <meta name="title" th:content="${post.getMetaTitle()}">
+
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}">
+    <style>
+        .line-clamp-2 {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+
+        .line-clamp-5 {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 5;
+        }
+
+        .reply-comment.show > form,
+        .nested-comments.show > div,
+        .nested-comments > button {
+            display: block;
+        }
+
+        .reply-comment > form,
+        .nested-comments.show > button,
+        .nested-comments > div {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <main class="container-fluid">
+        <header th:insert="~{components/header}"></header>
+
+        <section>
+            <!-- Post -->
+            <h1 th:text="${post.getTitle()}"></h1>
+            <div class="d-flex">
+                <div>
+                    Author:
+                    <strong th:text="${post.getAuthor().getFirstName() + ' ' + post.getAuthor().getMiddleName() + ' ' + post.getAuthor().getLastName()}"></strong>
+                </div>
+                &nbsp;-&nbsp;
+                <span th:text="${post.getUpdatedAt() != null} ? ${post.getUpdatedAt()} : ${post.getCreatedAt()}"></span>
+            </div>
+            <p class="mt-4 mb-0 line-clamp-5 post-content" th:text="${post.getContent()}"></p>
+            <button class="btn btn-link px-0 read-more">Read more</button>
+
+            <!--comments-->
+            <div class="mt-5">
+                <h3 class="mt-3">Comments</h3>
+
+                <!-- Add comment -->
+                <form th:action="@{/posts/{id}/comment(id=${post.getId()})}" method="post" class="mt-3">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="floatingInput" required th:field="${postComment.title}">
+                        <label for="floatingInput">Comment Title</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control" id="floatingTextarea" th:field="${postComment.content}"></textarea>
+                        <label for="floatingTextarea">Comment Content</label>
+                    </div>
+                    <button class="btn btn-primary">Comment</button>
+                </form>
+
+                <!-- Show comments -->
+                <div th:fragment="com (comments)" class="mt-3 mb-3" th:each="comment : ${comments}" th:object="${comment.user}">
+                    <h4 th:text="${comment.getTitle()}"></h4>
+                    <h6 class="fw-bold text-primary mb-1" th:text="*{firstName + ' ' + middleName + ' ' + lastName}"></h6>
+                    <p class="text-muted small mb-0">
+                        Shared publicly - <span th:text="${comment.getPublishedAt() != null ? comment.getPublishedAt() : comment.getCreatedAt()}"></span>
+                    </p>
+                    <div th:class="${comment.getContent() == null} ? none">
+                        <p class="mt-1 mb-1 line-clamp-2" th:text="${comment.getContent()}"></p>
+                    </div>
+
+                    <!-- Nested comments -->
+                    <div th:if="${comment.getPostComments().size() > 0}" class="nested-comments mx-5 px-2 border border-4 border-bottom-0 border-top-0 border-end-0 border-info">
+                        <button class="btn btn-link reply-btn px-0">
+                            <span th:text="${comment.getPostComments().size()}"></span>
+                            rely
+                        </button>
+
+                        <div th:replace="::com (${comment.getPostComments()})"></div>
+                    </div>
+
+                    <!-- Reply comment -->
+                    <div class="reply-comment mx-5 px-2 border border-4 border-bottom-0 border-top-0 border-end-0 border-info">
+                        <button class="btn btn-link px-0"
+                                th:data-comment-id="${comment.getId()}"
+                                th:data-post-id="${post.getId()}"
+                                onclick="replyComment(this)">
+                            Reply
+                        </button>
+
+                        <form th:action="@{/posts/{id}/comment(id=${post.getId()})}" method="post" class="mt-3">
+                            <input type="hidden" name="parent-comment" th:value="${comment.getId()}">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="floatingInput1" required th:field="${postComment.title}">
+                                <label for="floatingInput1">Comment Title</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <textarea class="form-control" id="floatingTextarea2" th:field="${postComment.content}"></textarea>
+                                <label for="floatingTextarea2">Comment Content</label>
+                            </div>
+                            <button class="btn btn-primary">Comment</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Load more comments -->
+                <div th:if="${comments.number + 1 < comments.totalPages}">
+                    <a th:href="@{/posts/{id}(id=${post.getId()}, page=${pageNext})}" class="btn btn-link">More comments</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.min.js}"></script>
+    <script th:src="@{/js/postDetail.js}"></script>
+    <script>
+        const reliesBtn = document.querySelectorAll('.reply-btn');
+
+        reliesBtn.forEach(replyBtn =>replyBtn.addEventListener('click', e =>
+            e.target.parentElement.classList.add('show')));
+
+        const replyComment = (button) => {
+            const parentElement = button.parentElement;
+
+            parentElement.classList.add('show');
+        };
+    </script>
+</body>
+</html>

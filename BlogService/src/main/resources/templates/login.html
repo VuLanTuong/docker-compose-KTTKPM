@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}">
+    <style>
+        main {
+            height: 100vh;
+        }
+
+        form {
+            width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <main class="justify-content-center align-items-center d-flex">
+        <form class="shadow p-5 mb-5 bg-body-tertiary rounded d-flex flex-column gap-2" action="/login" method="post">
+            <h1 class="text-center">Login</h1>
+            <div>
+                <label for="email" class="form-label">Email</label>
+                <input type="email" th:class="form-control + ' ' + (${error} ? is) + (${error} ? '-') + (${error} ? invalid)" id="email" required th:value="${user.email}" th:field="${user.email}">
+            </div>
+            <div>
+                <label for="password" class="form-label">Password</label>
+                <!--is-invalid-->
+                <input type="password" th:class="form-control + ' ' + (${error} ? is) + (${error} ? '-') + (${error} ? invalid)" id="password" required th:value="${user.passwordHash}" th:field="${user.passwordHash}">
+                <div class="invalid-feedback">
+                    Email or password is invalid.
+                </div>
+            </div>
+            <div class="text-center">
+                <button class="btn btn-primary" type="submit">Login</button>
+            </div>
+        </form>
+    </main>
+
+    <script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.min.js}"></script>
+</body>
+</html>

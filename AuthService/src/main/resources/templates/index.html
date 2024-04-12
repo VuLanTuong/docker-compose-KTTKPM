@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Blog</title>
+
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}">
+    <style>
+        .line-clamp-3 {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+        }
+    </style>
+</head>
+<body>
+    <main class="container-fluid">
+        <header th:insert="~{components/header}"></header>
+
+        <section>
+            <h1 class="text-center">Home</h1>
+
+            <div class="row mt-3">
+                <div class="col-6" th:each="post : ${posts}">
+                    <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
+                        <h4>
+                            <a th:href="@{/posts/{id}(id=${post.getId()})}" th:text="${post.getTitle()}"></a>
+                        </h4>
+                        <div>
+                            Author:
+                            <strong th:text="${post.getAuthor().getFirstName() + ' ' + post.getAuthor().getMiddleName() + ' ' + post.getAuthor().getLastName()}"></strong>
+                        </div>
+                        <p class="line-clamp-3" th:text="${post.getSummary()}"></p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="mt-3">
+                <ul class="pagination flex-wrap justify-content-center">
+                    <li th:class="page-item + ' ' + (${posts.number == 0} ? disabled)">
+                        <a class="page-link" th:href="@{/(size=${posts.size}, page=${posts.number})}">Previous</a>
+                    </li>
+                    <li th:class="page-item + ' ' + (${page == posts.number + 1} ? active)" th:each="page : ${pages}">
+                        <a class="page-link" th:href="@{/(size=${posts.size}, page=${page})}" th:text="${page}"></a>
+                    </li>
+                    <li th:class="page-item + ' ' + (${posts.number + 1 == posts.totalPages} ? disabled)">
+                        <a class="page-link" th:href="@{/(size=${posts.size}, page=${posts.number + 2})}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </section>
+    </main>
+
+    <script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.min.js}"></script>
+</body>
+</html>

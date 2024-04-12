@@ -1,0 +1,23 @@
+<div th:fragment="com (comment)">
+    <h4 th:text="${comment.getTitle()}"></h4>
+    <h6 class="fw-bold text-primary mb-1" th:text="*{firstName + ' ' + middleName + ' ' + lastName}"></h6>
+    <p class="text-muted small mb-0">
+        Shared publicly - <span th:text="${comment.getPublishedAt() != null ? comment.getPublishedAt() : comment.getCreatedAt()}"></span>
+    </p>
+    <div th:class="${comment.getContent() == null} ? none">
+        <p class="mt-1 mb-1 line-clamp-2" th:text="${comment.getContent()}"></p>
+    </div>
+    <!--                <a href="#!" class="d-flex align-items-center me-3">-->
+    <!--                    <i class="far fa-comment-dots me-2"></i>-->
+    <!--                    <p class="mb-0">Comment</p>-->
+    <!--                </a>-->
+
+    <div th:if="${comment.getPostComments().size() > 0}" class="mx-5 border border-4 border-bottom-0 border-top-0 border-end-0 border-info">
+        <button class="btn btn-link reply-btn" th:onclick="addComments(${comment})">
+            <span th:text="${comment.getPostComments().size()}"></span>
+            rely
+        </button>
+
+        <div th:each="comment : ${comment.getPostComments()}" th:replace="::com (${comment})"></div>
+    </div>
+</div>

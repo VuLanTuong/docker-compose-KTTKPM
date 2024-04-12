@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Post</title>
+
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}">
+</head>
+<body>
+<main class="container-fluid">
+    <header th:insert="~{components/header}"></header>
+
+    <section>
+        <h1 class="text-center">Add Post</h1>
+
+        <form action="/posts/add" method="post">
+            <div class="mb-3">
+                <label for="title" class="form-label">Title</label>
+                <input type="text" class="form-control" id="title" th:field="${post.title}">
+            </div>
+            <div class="mb-3">
+                <label for="meta-title" class="form-label">Meta title</label>
+                <input type="text" class="form-control" id="meta-title" th:field="${post.metaTitle}">
+            </div>
+            <div class="mb-3">
+                <label for="summary" class="form-label">Summary</label>
+                <textarea class="form-control" placeholder="Summary..." id="summary"  th:field="${post.summary}"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="content" class="form-label">Content</label>
+                <textarea class="form-control" placeholder="Content..." id="content" th:field="${post.content}"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="parent" class="form-label">Parent post</label>
+                <select id="parent" th:field="${parentPost.id}" class="form-select" aria-label="Default select example">
+                    <option selected value="">Select parent post</option>
+                    <option th:each="p : ${posts}" th:value="${p.getId()}" th:text="${p.getTitle()}"></option>
+                </select>
+            </div>
+            <div class="text-center">
+                <button class="btn btn-primary">Add</button>
+            </div>
+        </form>
+    </section>
+</main>
+
+<script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.min.js}"></script>
+</body>
+</html>
