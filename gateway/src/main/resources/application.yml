@@ -1,3 +1,6 @@
+auth-service.uri: http://localhost:8080
+blog-service.uri: http://localhost:8081
+
 spring:
   cloud:
     gateway:
@@ -13,10 +16,10 @@ spring:
               - DELETE
       routes:
         - id: AuthService
-          uri: http://localhost:8080
+          uri: ${auth-service.uri}
           predicates:
             - Path=/auth/**, /webjars/**
         - id: BlogService
-          uri: http://localhost:8081
+          uri: ${blog-service.uri}
           predicates:
             - Path=/blog/**, /webjars/**

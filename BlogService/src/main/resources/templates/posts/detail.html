@@ -57,7 +57,7 @@
                 <h3 class="mt-3">Comments</h3>
 
                 <!-- Add comment -->
-                <form th:action="@{/posts/{id}/comment(id=${post.getId()})}" method="post" class="mt-3">
+                <form th:action="@{/blog/posts/{id}/comment(id=${post.getId()})}" method="post" class="mt-3">
                     <div class="form-floating mb-3">
                         <input type="text" class="form-control" id="floatingInput" required th:field="${postComment.title}">
                         <label for="floatingInput">Comment Title</label>
@@ -99,7 +99,7 @@
                             Reply
                         </button>
 
-                        <form th:action="@{/posts/{id}/comment(id=${post.getId()})}" method="post" class="mt-3">
+                        <form th:action="@{/blog/posts/{id}/comment(id=${post.getId()})}" method="post" class="mt-3">
                             <input type="hidden" name="parent-comment" th:value="${comment.getId()}">
                             <div class="form-floating mb-3">
                                 <input type="text" class="form-control" id="floatingInput1" required th:field="${postComment.title}">
@@ -116,7 +116,7 @@
 
                 <!-- Load more comments -->
                 <div th:if="${comments.number + 1 < comments.totalPages}">
-                    <a th:href="@{/posts/{id}(id=${post.getId()}, page=${pageNext})}" class="btn btn-link">More comments</a>
+                    <a th:href="@{/blog/posts/{id}(id=${post.getId()}, page=${pageNext})}" class="btn btn-link">More comments</a>
                 </div>
             </div>
         </section>

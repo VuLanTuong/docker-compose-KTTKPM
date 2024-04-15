@@ -11,10 +11,13 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 
 import java.time.Instant;
 import java.util.Random;
 
+@EnableRedisHttpSession
 @SpringBootApplication
 public class BlogServiceApplication {
     @Autowired
@@ -26,6 +29,4 @@ public class BlogServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(BlogServiceApplication.class, args);
     }
-
-
 }

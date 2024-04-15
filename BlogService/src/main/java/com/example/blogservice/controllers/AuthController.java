@@ -10,13 +10,18 @@ import com.example.blogservice.backend.repositories.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,14 +38,26 @@ public class AuthController {
     private final PostCommentRepository postCommentRepository;
     private final UserRepository userRepository;
 
-    public AuthController(PostRepository postRepository, PostCommentRepository postCommentRepository, UserRepository userRepository) {
+    private final String gatewayBaseUrl;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    public AuthController(
+            PostRepository postRepository,
+            PostCommentRepository postCommentRepository,
+            UserRepository userRepository,
+            @Value("${gateway.uri}") String gatewayUri,
+            @Value("${gateway.port}") int gatewayPort) {
         this.postRepository = postRepository;
         this.postCommentRepository = postCommentRepository;
         this.userRepository = userRepository;
+        this.gatewayBaseUrl = String.format("http://%s:%d", gatewayUri, gatewayPort);
     }
 
-    @GetMapping(value = {"/", "/index", "/posts"})
-    public ModelAndView index(@RequestParam("page") Optional<Integer> page, @RequestParam("size") Optional<Integer> size, HttpSession session) {
+    @GetMapping(value = { "/", "/index", "/posts" })
+    public ModelAndView index(@RequestParam("page") Optional<Integer> page,
+            @RequestParam("size") Optional<Integer> size, HttpSession session) {
         int pageNum = page.orElse(1);
         int sizeNum = size.orElse(10);
 
@@ -53,17 +70,17 @@ public class AuthController {
         modelAndView.addObject("user", session.getAttribute("user"));
 
         modelAndView.addObject("posts", posts);
-        modelAndView.addObject("pages", IntStream.rangeClosed(1, posts.getTotalPages()).boxed().collect(Collectors.toList()));
+        modelAndView.addObject("pages",
+                IntStream.rangeClosed(1, posts.getTotalPages()).boxed().collect(Collectors.toList()));
 
         modelAndView.setViewName("index");
 
         return modelAndView;
     }
 
-
-
-    @GetMapping(value = {"/posts/{id}"})
-    public ModelAndView postDetail(@PathVariable("id") String id, @RequestParam("page") Optional<Integer> page, HttpSession session) {
+    @GetMapping(value = { "/posts/{id}" })
+    public ModelAndView postDetail(@PathVariable("id") String id, @RequestParam("page") Optional<Integer> page,
+            HttpSession session) {
         ModelAndView modelAndView = new ModelAndView();
 
         Integer pageNum = page.orElse(1);
@@ -71,7 +88,6 @@ public class AuthController {
         try {
             Long idLong = Long.parseLong(id);
             Optional<Post> post = postRepository.findById(idLong);
-
 
             if (post.isPresent()) {
                 PageRequest pageRequest = PageRequest.of(0, 5 * pageNum, Sort.by("createdAt").descending());
@@ -98,35 +114,47 @@ public class AuthController {
     }
 
     @GetMapping("/posts/add")
-    public String addPost(HttpSession session, Model model) {
+    public ModelAndView addPost(HttpSession session, Model model) {
         Object object = session.getAttribute("user");
+        String email = (String) session.getAttribute("user");
+        logger.info("SESSION Email: " + email);
+        String apiUrl = this.gatewayBaseUrl + "/auth/rest/findByEmail/{email}";
 
+        ResponseEntity<User> responseEntity = restTemplate.exchange(apiUrl, HttpMethod.GET, null, User.class, email);
         if (object == null) {
-            return "redirect:/login";
+
+            String redirectUrl = this.gatewayBaseUrl + "/auth/login";
+            return new ModelAndView("redirect:" + redirectUrl);
         }
 
-        User user = (User) object;
-
+        User user = responseEntity.getBody();
         List<Post> posts = postRepository.findAllByAuthorAndPublished(user, true);
 
         Post post = new Post();
         Post parentPost = new Post();
         post.setParent(parentPost);
-
-        model.addAttribute("post", post);
-        model.addAttribute("parentPost", parentPost);
-        model.addAttribute("posts", posts);
-        model.addAttribute("user", user);
-
-        return "posts/add";
+        ModelAndView modelAndView = new ModelAndView("posts/add");
+        modelAndView.addObject("post", post);
+        modelAndView.addObject("parentPost", parentPost);
+        modelAndView.addObject("posts", posts);
+        modelAndView.addObject("user", user);
+        return modelAndView;
     }
 
     @PostMapping("/posts/add")
-    public String addPost(@ModelAttribute("post") Post post, @ModelAttribute("parentPost") Post parentPost, HttpSession session) {
+    public ModelAndView addPost(@ModelAttribute("post") Post post, @ModelAttribute("parentPost") Post parentPost,
+            HttpSession session) {
         Object object = session.getAttribute("user");
+        String email = (String) session.getAttribute("user");
+        logger.info("SESSION Email: " + email);
+        String apiUrl = this.gatewayBaseUrl + "/auth/rest/findByEmail/{email}";
+        ResponseEntity<User> responseEntity = restTemplate.exchange(apiUrl, HttpMethod.GET, null, User.class, email);
+        User user = responseEntity.getBody();
 
         if (session.getAttribute("user") == null) {
-            return "redirect:/login";
+            String redirectUrl = this.gatewayBaseUrl + "/auth/login";
+            // return "redirect:" + redirectUrl;
+            return new ModelAndView("redirect:" + redirectUrl);
         }
 
         if (parentPost.getId() != null) {
@@ -135,7 +163,7 @@ public class AuthController {
             parentPostOptional.ifPresent(post::setParent);
         }
 
-        User user = (User) object;
+        // User user = (User) object;
         post.setId(null);
         post.setAuthor(user);
         post.setPublished(true);
@@ -149,12 +177,15 @@ public class AuthController {
         }
 
         postRepository.save(post);
+        String redirectUrl = this.gatewayBaseUrl + "/blog/index";
 
-        return "redirect:/index";
+        return new ModelAndView("redirect:" + redirectUrl);
     }
 
     @PostMapping("/posts/{id}/comment")
-    public ModelAndView addComment(@ModelAttribute("postComment") PostComment postComment, @ModelAttribute("parent-comment") String parentCommentId, @PathVariable("id") Long postId, HttpSession session) {
+    public ModelAndView addComment(@ModelAttribute("postComment") PostComment postComment,
+            @ModelAttribute("parent-comment") String parentCommentId, @PathVariable("id") Long postId,
+            HttpSession session) {
         ModelAndView modelAndView = new ModelAndView();
 
         Object object = session.getAttribute("user");
