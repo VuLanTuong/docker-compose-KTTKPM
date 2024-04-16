@@ -121,10 +121,9 @@ public class AuthController {
         String apiUrl = this.gatewayBaseUrl + "/auth/rest/findByEmail/{email}";
 
         ResponseEntity<User> responseEntity = restTemplate.exchange(apiUrl, HttpMethod.GET, null, User.class, email);
-        if (object == null) {
-
+        if (session.getAttribute("user") == null) {
             String redirectUrl = this.gatewayBaseUrl + "/auth/login";
-            return new ModelAndView("redirect:" + redirectUrl);
+            return new ModelAndView("redirect:localhost://8888/auth/login");
         }
 
         User user = responseEntity.getBody();
@@ -179,7 +178,7 @@ public class AuthController {
         postRepository.save(post);
         String redirectUrl = this.gatewayBaseUrl + "/blog/index";
 
-        return new ModelAndView("redirect:" + redirectUrl);
+        return new ModelAndView("redirect:http://localhost:8888/blog/index");
     }
 
     @PostMapping("/posts/{id}/comment")
@@ -189,17 +188,23 @@ public class AuthController {
         ModelAndView modelAndView = new ModelAndView();
 
         Object object = session.getAttribute("user");
+        String email = (String) session.getAttribute("user");
+        logger.info("SESSION Email: " + email);
+        String apiUrl = this.gatewayBaseUrl + "/auth/rest/findByEmail/{email}";
+        ResponseEntity<User> responseEntity = restTemplate.exchange(apiUrl, HttpMethod.GET, null, User.class, email);
+        User user = responseEntity.getBody();
 
-        if (object == null) {
-            modelAndView.setViewName("redirect:/login");
-            return modelAndView;
+        if (session.getAttribute("user") == null) {
+            String redirectUrl = this.gatewayBaseUrl + "/auth/login";
+            // return "redirect:" + redirectUrl;
+            return new ModelAndView("redirect:localhost://8888/auth/login");
         }
 
         postComment.setId(null);
         postComment.setPost(new Post(postId));
         postComment.setPublished(true);
         postComment.setCreatedAt(Instant.now());
-        postComment.setUser((User) object);
+        postComment.setUser(user);
         if (postComment.getContent() != null && postComment.getContent().isEmpty())
             postComment.setContent(null);
 
@@ -213,7 +218,7 @@ public class AuthController {
 
         postCommentRepository.save(postComment);
 
-        modelAndView.setViewName("redirect:/posts/" + postId);
+        modelAndView.setViewName("redirect:http://localhost:8888/blog/posts/" + postId);
         return modelAndView;
     }
 }
